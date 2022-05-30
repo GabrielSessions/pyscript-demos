@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyscript Demo 5</title>
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <link rel="stylesheet" href="./style2.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/tuftsceeo/SPIKE-Web-Interface/cdn/ServiceDock.js" charset="utf-8"></script>
+</head>
+
+<body>
+    <py-title>ServiceDock Example</py-title>
+    <div id="servicedock" style="display:inline-block; margin-left:25px; margin-right: 25px;">
+        <div id="spike"> 
+		    <service-spike id="service_spike"></service-spike>
+        </div>
+	</div>
+    <p style="display:inline-block; margin-left:25px;">Testing if ServiceDock can be used in PyScript</p>
+
+    <br>
+
+    <div>
+        <button id="start_button" type="button" class="button" style="margin-top:25px">
+            Run Motor A!
+        </button>
+        <button id="stop_button" type="button" class="button" style="margin-top:25px; background-color: red;">
+            Stop Motor A!
+        </button>
+    </div>
+
+    <br>
+
+    <py-script>
+        from pyodide import create_proxy
+
+        print("Use buttons to control a Motor in Port A after ServiceDock is initialized.")
+
+        serviceSPIKE = document.getElementById("service_spike").getService()
+
+        def runMotorA(arg):
+            global serviceSPIKE
+            if (serviceSPIKE.isActive()):
+                motor = serviceSPIKE.Motor("A")
+                motor.start(20)
+            else:
+                console.log("Error")
+
+        def stopMotorA(arg):
+            global serviceSPIKE
+            if (serviceSPIKE.isActive()):
+                motor = serviceSPIKE.Motor("A")
+                motor.stop()
+                console.log(motor.get_position())
+            else:
+                console.log("Error")
+
+        trigger = create_proxy(runMotorA)
+        document.getElementById("start_button").addEventListener("click", trigger)
+
+        stop = create_proxy(stopMotorA)
+        document.getElementById("stop_button").addEventListener("click", stop)
+        
+    </py-script>
+
+
+    <script>
+        let spikeActive = false;
+        let serviceSPIKE = document.getElementById("service_spike").getService();
+
+        serviceSPIKE.executeAfterInit(async function() {
+            console.log("Working!");
+            spikeActive = true;
+        })
+    </script>
+    
+
+    
+
+</body>
