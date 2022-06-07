@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pyscript Demo 8</title>
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <link rel="stylesheet" href="./style7.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/tuftsceeo/SPIKE-Web-Interface/cdn/ServiceDock.js" charset="utf-8"></script>
+    <py-env>
+        - numpy
+        - matplotlib
+    </py-env>
+</head>
+
+<body>
+    <py-title>Basic Data Logging</py-title>
+    <p style="margin-left:25px;">Track distance sensor values over time. *Don't forget to connect to ServiceDock before running any ServiceDock specific code! Distance sensor must be plugged into Port A.</p>
+
+    <br>
+
+    <div id="servicedock" style="display:inline-block; margin-left:25px; margin-right: 25px;">
+        <div id="spike"> 
+		    <service-spike id="service_spike"></service-spike>
+        </div>
+	</div>
+
+    <div class="textEntry">
+        <form>
+            <label for="time">Tracking Time (seconds)</label>
+            <input type="text" id="time" name="time" class="textBox" value="10"><br><br>
+        </form>
+    </div>
+
+    <div style="margin-left:25px">
+        <button id="start_button" type="button" class="button">
+            Start Tracking
+        </button>
+    </div>
+
+    <br><br>
+
+    <py-script>
+        from pyodide import create_proxy
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import time
+
+        freq = 0.1
+
+        serviceSPIKE = document.getElementById("service_spike").getService()
+        data = np.array([], dtype=float)
+
+        def startLogging(arg):
+            global serviceSPIKE
+            
+            if (serviceSPIKE.isActive()):
+                distSensor = serviceSPIKE.DistanceSensor("A")
+                numRecordings = int(document.getElementById("time").value)/freq
+                numRecordings = int(numRecordings)
+                recordDists(distSensor, numRecordings)
+            else:
+                console.log("Error: SPIKE is not connected!")
+
+        def recordDists(distSensor, numRecordings):
+            global data
+
+            print("Working")
+
+            for i in range(numRecordings):
+                data = np.append(data, [[(i * freq), distSensor.get_distance_cm()]])
+                time.sleep(freq)
+                console.log()
+
+            plt.scatter(data[:,0], data[:,1], label="dots", color='r', marker=".", s=10)
+            plt
+
+        trigger = create_proxy(startLogging)
+        document.getElementById("start_button").addEventListener("click", trigger)
+
+        
+    </py-script>
+
+    <script>
+        let serviceSPIKE = document.getElementById("service_spike").getService();
+
+        serviceSPIKE.executeAfterInit(async function() {
+            console.log("Working!");
+
+        })
+    </script>
+    
+
+</body>
