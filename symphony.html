@@ -5,16 +5,14 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pyscript Demo 7</title>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
     <link rel="stylesheet" href="./style7.css" />
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/tuftsceeo/SPIKE-Web-Interface/cdn/ServiceDock.js" charset="utf-8"></script>
     <script src="./symphony.js"></script>
 </head>
 
 <body>
-    <py-title>SPIKE Symphony</py-title>
-    <p style="margin-left:25px;">Play a symphony of SPIKE Primes :)</p>
+    <h1 style="margin-left:25px">SPIKE Symphony</h1>
+    <p style="margin-left:25px;">Play music with multiple SPIKE Primes :)</p>
 
     <br>
 
@@ -40,6 +38,50 @@
       
     </py-script>
 
-    
+    <script>
+    window.onload = () => {
+        let serviceSPIKE = document.getElementById("service_spike").getService();
+        let serviceSPIKE2 = document.getElementById("service_spike2").getService();
+
+        serviceSPIKE.executeAfterInit(async function() {
+            console.log("Working!");
+        })
+
+        serviceSPIKE2.executeAfterInit(async function() {
+            console.log("Working 2!");
+        })
+    }
+
+
+    document.getElementById("start").addEventListener('click', () => {
+        let serviceSPIKE = document.getElementById("service_spike").getService();
+        let serviceSPIKE2 = document.getElementById("service_spike2").getService();
+        if (serviceSPIKE.isActive() && serviceSPIKE2.isActive()) {
+            uploadAndPlay(serviceSPIKE, serviceSPIKE2);
+        }
+        else if (serviceSPIKE.isActive()) {
+            alert("SPIKE 2 is not connected")
+        }
+        else if (serviceSPIKE2.isActive()) {
+            alert("SPIKE 1 is not connected")
+        }
+        else {
+            alert("SPIKE 1 and 2 are not connected")
+        }
+    })
+
+    function uploadAndPlay(spike1, spike2) {
+        spike1.writeProgram("Symphony.py", music1, 2)
+
+        spike2.writeProgram("Symphony.py", music2, 2)
+
+        setTimeout(() => {
+            spike1.executeProgram(2)
+            spike2.executeProgram(2)
+
+        }, 4000);
+    }
+</script>    
+
 
 </body>
