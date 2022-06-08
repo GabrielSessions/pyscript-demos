@@ -29,6 +29,12 @@
         </div>
 	</div>
 
+    <div id="servicedock" style="display:inline-block; margin-left:25px; margin-right: 25px;">
+        <div id="spike3"> 
+		    <service-spike id="service_spike3"></service-spike>
+        </div>
+	</div>
+
     <br><br>
 
     <button type="button" class="button" id="start">Start the music!</button>
@@ -42,6 +48,7 @@
     window.onload = () => {
         let serviceSPIKE = document.getElementById("service_spike").getService();
         let serviceSPIKE2 = document.getElementById("service_spike2").getService();
+        let serviceSPIKE3 = document.getElementById("service_spike3").getService();
 
         serviceSPIKE.executeAfterInit(async function() {
             console.log("Working!");
@@ -50,14 +57,19 @@
         serviceSPIKE2.executeAfterInit(async function() {
             console.log("Working 2!");
         })
+
+        serviceSPIKE3.executeAfterInit(async function() {
+            console.log("Working 3!");
+        })
     }
 
 
     document.getElementById("start").addEventListener('click', () => {
         let serviceSPIKE = document.getElementById("service_spike").getService();
         let serviceSPIKE2 = document.getElementById("service_spike2").getService();
-        if (serviceSPIKE.isActive() && serviceSPIKE2.isActive()) {
-            uploadAndPlay(serviceSPIKE, serviceSPIKE2);
+        let serviceSPIKE3 = document.getElementById("service_spike3").getService();
+        if (serviceSPIKE.isActive() && serviceSPIKE2.isActive() && serviceSPIKE3.isActive()) {
+            uploadAndPlay(serviceSPIKE, serviceSPIKE2, serviceSPIKE3);
         }
         else if (serviceSPIKE.isActive()) {
             alert("SPIKE 2 is not connected")
@@ -70,14 +82,17 @@
         }
     })
 
-    function uploadAndPlay(spike1, spike2) {
+    function uploadAndPlay(spike1, spike2, spike3) {
         spike1.writeProgram("Symphony.py", music1, 2)
 
         spike2.writeProgram("Symphony.py", music2, 2)
 
+        spike3.writeProgram("Symphony.py", music1, 2)
+
         setTimeout(() => {
             spike1.executeProgram(2)
             spike2.executeProgram(2)
+            spike3.executeProgram(2)
 
         }, 4000);
     }
