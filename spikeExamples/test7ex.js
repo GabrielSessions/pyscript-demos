@@ -1,6 +1,5 @@
 $('document').ready(() => {
-    console.log("Hello world!");
-    const repls = ["example1", "example2"];
+    const repls = ["example1", "example2", "example3"];
     
     repls.forEach(id => {
         animateREPL(id)
@@ -18,6 +17,7 @@ const animateREPL = (id) => {
 
 // Triggers up/down animation for REPLs
 const toggleREPL = (id) => {
+    console.log(id + " clicked!")
     $("#" + id + "repl").animate({
         height: 'toggle'
     });

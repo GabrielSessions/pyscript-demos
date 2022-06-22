@@ -115,6 +115,70 @@ singleMotor.stop()
         </div>
     </div>
 
+    <div id="dropdown3">
+        <div class="mt-5 mx-20">
+        <button type="button" class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-blue-500" id="example3" aria-expanded="true" aria-haspopup="true">
+        Example 3: Color Sensor Data Logging
+        <!-- Heroicon name: solid/chevron-down -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-chevron-down -mr-1 ml-2 h-5 w-5" viewBox="0 0 16 16">
+            <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+        </svg>
+        
+        </button>
+    </div>
+
+        <div id="example3repl" class="hidden">
+            <py-repl>
+# Plotting Color Sensor Samples (r, g, b)
+# Sensor should be plugged into Port A
+# Press the left hub button to take a sample
+# Press the right hub button to stop
+
+print("Running!")
+
+import matplotlib.pyplot as plt
+import numpy as np
+import asyncio
+
+
+
+redVals = np.array([])
+blueVals = np.array([])
+greenVals = np.array([])
+
+hub = serviceSPIKE.PrimeHub()
+colorSensor = serviceSPIKE.ColorSensor('A')
+
+hub.right_button.was_pressed()
+isDone = False
+
+while (not isDone):
+    if (hub.right_button.was_pressed()):
+        isDone = True
+    elif (hub.left_button.was_pressed()):
+        #print("Sample Recorded!")
+        redVals = np.append(redVals, colorSensor.get_red())
+        blueVals = np.append(blueVals, colorSensor.get_blue())
+        greenVals = np.append(greenVals, colorSensor.get_green())
+    await asyncio.sleep(0.01)
+
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+
+ax.scatter(redVals, greenVals, blueVals)
+
+ax.set_xlabel('Red Values')
+ax.set_ylabel('Green Values')
+ax.set_zlabel('Blue Values')
+
+plt
+                
+
+            </py-repl>
+        </div>
+    </div>
+
     <br><br>
 
     <py-script>
@@ -138,3 +202,4 @@ singleMotor.stop()
     
 
 </body>
+
