@@ -12,85 +12,159 @@
     <py-env>
         - numpy
         - matplotlib
+        - scikit-learn
+        - asyncio
     </py-env>
 </head>
 
 <body>
-    <py-title>Basic Data Logging</py-title>
-    <p style="margin-left:25px;">Track distance sensor values over time. *Don't forget to connect to ServiceDock before running any ServiceDock specific code! Distance sensor must be plugged into Port A.</p>
+    <py-title>Color Sensor Machine Learning</py-title>
+    
 
     <br>
 
+    <p style="margin-left:25px; margin-top: 25px; margin-bottom: 25px; display: inline-block;">Part 0: Connect to SPIKE</p>
     <div id="servicedock" style="display:inline-block; margin-left:25px; margin-right: 25px;">
         <div id="spike"> 
 		    <service-spike id="service_spike"></service-spike>
         </div>
 	</div>
+    
 
-    <div class="textEntry">
-        <form>
-            <label for="time">Tracking Time (seconds)</label>
-            <input type="text" id="time" name="time" class="textBox" value="10"><br><br>
-        </form>
-    </div>
+    <p style="margin-left:25px; margin-top: 25px; margin-bottom: 25px;">Part 1: Train the Model</p>
 
-    <div style="margin-left:25px">
-        <button id="start_button" type="button" class="button">
-            Start Tracking
-        </button>
-    </div>
+    <py-repl>
+# Plotting Color Sensor Samples (r, g, b)
+# Sensor should be plugged into Port A
+# Press the left hub button to take a sample
+# Press the right hub button to stop
 
-    <br><br>
+# Take samples of two differently colored objects
 
+async def createModel(colorSensor, hub):
+    # Part 1: Gathering Data
+    hub.right_button.was_pressed()
+    isDone = False
+    rightCount = 0
+    dataSplit = 0
+    redVals = np.array([])
+    blueVals = np.array([])
+    greenVals = np.array([])
+
+    print("Collecting Data for Object 1")
+    
+    while (not isDone):
+        if (hub.right_button.was_pressed()):
+            if(rightCount == 1):
+                isDone = True
+            elif(rightCount == 0):
+                rightCount = 1
+                dataSplit = redVals.size
+                print("Collecting Data for Object 2")
+            
+        elif (hub.left_button.was_pressed()):
+            redVals = np.append(redVals, colorSensor.get_red())
+            blueVals = np.append(blueVals, colorSensor.get_blue())
+            greenVals = np.append(greenVals, colorSensor.get_green())
+        await asyncio.sleep(0.1)
+
+    print("Creating Model!")
+    
+    #Part 2: Creating the model
+    X = np.transpose(np.array([np.transpose(redVals), np.transpose(blueVals), np.transpose(greenVals)]))
+    
+    object1 = np.zeros(dataSplit)
+    object2 = np.ones(redVals.size - dataSplit)
+    Y = np.append(object1, object2)
+    clf = svm.SVC(kernel="linear")
+    clf.fit(X, Y)
+
+    print(clf.coef_)
+    print(clf.intercept_)
+
+    return clf, redVals, greenVals, blueVals, dataSplit, clf.coef_, clf.intercept_
+
+colorSensor = serviceSPIKE.ColorSensor('A')
+hub = serviceSPIKE.PrimeHub()
+
+model, redVals, greenVals, blueVals, split, coef, intercept  = await createModel(colorSensor, hub)
+    </py-repl>
+    <p style="margin-left:25px; margin-top: 25px; margin-bottom: 25px;">Part 2: Plot the Training Data</p>
+    <py-repl>
+# Generate a plot of the training data
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+
+# Plotting Training Points
+ax.scatter(redVals[:split], greenVals[:split], blueVals[:split], c='r')
+ax.scatter(redVals[split:], greenVals[split:], blueVals[split:], c='b')
+
+# Plotting Seperating Hyperplane
+print(coef)
+a, b, c, d = coef[0][2], coef[0][1], coef[0][0], intercept
+
+planeX = np.linspace(0, 1000, 1000)
+planeY = np.linspace(0, 1000, 1000)
+planeX, planeY = np.meshgrid(planeX, planeY)
+
+planeZ = (1/c) * (d - (a*planeX) - (b*planeY))
+surface = ax.plot_surface(planeX, planeY, planeZ)
+ax.set_zlim3d(0, 1000) 
+
+ax.set_xlabel('Red Values')
+ax.set_ylabel('Green Values')
+ax.set_zlabel('Blue Values')
+
+plt
+    </py-repl>
+    <p style="margin-left:25px; margin-top: 25px; margin-bottom: 25px;">Part 3: Test the Model</p>
+    <py-repl>
+async def testModel(clf):
+    hub.right_button.was_pressed()
+    isDone = False
+    print("Testing Model")
+    
+    while (not isDone):
+        if (hub.right_button.was_pressed()):
+            isDone = True
+            
+        elif (hub.left_button.was_pressed()):
+            redVal = colorSensor.get_red()
+            blueVal = colorSensor.get_blue()
+            greenVal = colorSensor.get_green()
+
+            print("Prediction: Object " + str(clf.predict([[redVal, blueVal, greenVal]])))
+            
+        await asyncio.sleep(0.1)
+
+await testModel(model)
+    
+    </py-repl>
+
+    <p style="margin-left:25px; margin-top: 25px; margin-bottom: 25px;">Part 4: Plot the Results</p>
+
+    <py-repl>
+# Plotting the test data
+    </py-repl>
     <py-script>
-        from pyodide import create_proxy
-        import matplotlib.pyplot as plt
+        from sklearn import svm
         import numpy as np
-        import time
-
-        freq = 0.1
+        import asyncio
+        import matplotlib.pyplot as plt
 
         serviceSPIKE = document.getElementById("service_spike").getService()
-        data = np.array([], dtype=float)
-
-        def startLogging(arg):
-            global serviceSPIKE
-            
-            if (serviceSPIKE.isActive()):
-                distSensor = serviceSPIKE.DistanceSensor("A")
-                numRecordings = int(document.getElementById("time").value)/freq
-                numRecordings = int(numRecordings)
-                recordDists(distSensor, numRecordings)
-            else:
-                console.log("Error: SPIKE is not connected!")
-
-        def recordDists(distSensor, numRecordings):
-            global data
-
-            print("Working")
-
-            for i in range(numRecordings):
-                data = np.append(data, [[(i * freq), distSensor.get_distance_cm()]])
-                time.sleep(freq)
-                console.log()
-
-            plt.scatter(data[:,0], data[:,1], label="dots", color='r', marker=".", s=10)
-            plt
-
-        trigger = create_proxy(startLogging)
-        document.getElementById("start_button").addEventListener("click", trigger)
-
-        
     </py-script>
 
     <script>
         let serviceSPIKE = document.getElementById("service_spike").getService();
 
         serviceSPIKE.executeAfterInit(async function() {
-            console.log("Working!");
+            console.log(serviceSPIKE);
 
         })
     </script>
     
 
 </body>
+
